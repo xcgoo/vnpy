@@ -107,8 +107,6 @@ class BinanceGateway(BaseGateway):
         self.market_ws_api = BinanceDataWebsocketApi(self)
         self.rest_api = BinanceRestApi(self)
 
-        self.event_engine.register(EVENT_TIMER, self.process_timer_event)
-
     def connect(self, setting: dict):
         """"""
         key = setting["key"]
@@ -120,6 +118,8 @@ class BinanceGateway(BaseGateway):
         self.rest_api.connect(key, secret, session_number,
                               proxy_host, proxy_port)
         self.market_ws_api.connect(proxy_host, proxy_port)
+
+        self.event_engine.register(EVENT_TIMER, self.process_timer_event)
 
     def subscribe(self, req: SubscribeRequest):
         """"""
@@ -388,8 +388,9 @@ class BinanceRestApi(RestClient):
     def keep_user_stream(self):
         """"""
         self.keep_alive_count += 1
-        if self.keep_alive_count < 1800:
+        if self.keep_alive_count < 600:
             return
+        self.keep_alive_count = 0
 
         data = {
             "security": Security.API_KEY
@@ -543,7 +544,7 @@ class BinanceRestApi(RestClient):
                 "limit": limit,
                 "startTime": start_time * 1000,         # convert to millisecond
             }
-            
+
             # Add end time if specified
             if req.end:
                 end_time = int(datetime.timestamp(req.end))
@@ -570,7 +571,7 @@ class BinanceRestApi(RestClient):
                     break
 
                 buf = []
-                
+
                 for l in data:
                     dt = datetime.fromtimestamp(l[0] / 1000)    # convert to second
 
@@ -629,7 +630,7 @@ class BinanceTradeWebsocketApi(WebsocketClient):
         """"""
         if packet["e"] == "outboundAccountInfo":
             self.on_account(packet)
-        else:
+        elif packet["e"] == "executionReport":
             self.on_order(packet)
 
     def on_account(self, packet):
@@ -641,7 +642,7 @@ class BinanceTradeWebsocketApi(WebsocketClient):
                 frozen=float(d["l"]),
                 gateway_name=self.gateway_name
             )
-            
+
             if account.balance:
                 self.gateway.on_account(account)
 
@@ -650,7 +651,7 @@ class BinanceTradeWebsocketApi(WebsocketClient):
         dt = datetime.fromtimestamp(packet["O"] / 1000)
         time = dt.strftime("%Y-%m-%d %H:%M:%S")
 
-        if packet["C"] == "null":
+        if packet["C"] == "":
             orderid = packet["c"]
         else:
             orderid = packet["C"]

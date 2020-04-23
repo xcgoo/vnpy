@@ -141,19 +141,19 @@ class ScriptEngine(BaseEngine):
                 )
                 self.main_engine.subscribe(req, contract.gateway_name)
 
-    def buy(self, vt_symbol: str, price: str, volume: str, order_type: OrderType = OrderType.LIMIT) -> str:
+    def buy(self, vt_symbol: str, price: float, volume: float, order_type: OrderType = OrderType.LIMIT) -> str:
         """"""
         return self.send_order(vt_symbol, price, volume, Direction.LONG, Offset.OPEN, order_type)
 
-    def sell(self, vt_symbol: str, price: str, volume: str, order_type: OrderType = OrderType.LIMIT) -> str:
+    def sell(self, vt_symbol: str, price: float, volume: float, order_type: OrderType = OrderType.LIMIT) -> str:
         """"""
         return self.send_order(vt_symbol, price, volume, Direction.SHORT, Offset.CLOSE, order_type)
 
-    def short(self, vt_symbol: str, price: str, volume: str, order_type: OrderType = OrderType.LIMIT) -> str:
+    def short(self, vt_symbol: str, price: float, volume: float, order_type: OrderType = OrderType.LIMIT) -> str:
         """"""
         return self.send_order(vt_symbol, price, volume, Direction.SHORT, Offset.OPEN, order_type)
 
-    def cover(self, vt_symbol: str, price: str, volume: str, order_type: OrderType = OrderType.LIMIT) -> str:
+    def cover(self, vt_symbol: str, price: float, volume: float, order_type: OrderType = OrderType.LIMIT) -> str:
         """"""
         return self.send_order(vt_symbol, price, volume, Direction.LONG, Offset.CLOSE, order_type)
 
@@ -247,11 +247,13 @@ class ScriptEngine(BaseEngine):
             return []
 
         start = datetime.strptime(start_date, "%Y%m%d")
+        end = datetime.now()
 
         req = HistoryRequest(
             symbol=contract.symbol,
             exchange=contract.exchange,
             start=start,
+            end=end,
             interval=interval
         )
 
